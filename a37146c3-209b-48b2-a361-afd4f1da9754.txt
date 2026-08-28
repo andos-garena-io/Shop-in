@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Garena x ANDOS | Access Gateway</title>
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
+          colors: {
+            obsidian: {
+              950: '#09090b', 900: '#0f0f12', 800: '#18181b', 700: '#27272a',
+              600: '#3f3f46', 500: '#52525b', 400: '#71717a', 300: '#a1a1aa',
+              200: '#d4d4d8', 100: '#e4e4e7', 50: '#fafafa',
+            },
+            garena: { red: '#ef4444', dark: '#dc2626' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; width: 100%; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; background: #09090b; overflow-x: hidden; }
+
+    /* Smooth view transitions - no white flash */
+    .view { 
+      position: absolute; top: 56px; left: 0; right: 0; bottom: 0;
+      opacity: 0; visibility: hidden; 
+      transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1), visibility 0.35s cubic-bezier(0.4,0,0.2,1);
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      width: 100%;
+    }
+    .view.active { 
+      opacity: 1; visibility: visible; 
+      position: relative; top: 0;
+    }
+    #app { position: relative; min-height: calc(100vh - 56px); width: 100%; background: #09090b; }
+
+    /* Ripple & Tap effects */
+    .ripple-btn { position: relative; overflow: hidden; }
+    .ripple-btn .ripple { 
+      position: absolute; border-radius: 50%; transform: scale(0); 
+      animation: ripple-anim 0.5s cubic-bezier(0,0.5,0.5,1); 
+      background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%); 
+      pointer-events: none; 
+    }
+    @keyframes ripple-anim { to { transform: scale(5); opacity: 0; } }
+
+    .tap { 
+      transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease, filter 0.15s ease; 
+      will-change: transform;
+    }
+    .tap:active { transform: scale(0.96) !important; filter: brightness(0.9); }
+    .tap:hover { transform: translateY(-1px); }
+
+    .btn-premium { transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1); position: relative; overflow: hidden; }
+    .btn-premium::after { 
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; 
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); 
+      transition: left 0.6s ease; 
+    }
+    .btn-premium:hover::after { left: 100%; }
+    .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+    .btn-premium:active { transform: translateY(0) scale(0.96); }
+
+    .input-focus:focus { 
+      border-color: #22c55e; 
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.15); 
+      outline: none; 
+      transform: translateY(-1px); 
+      transition: all 0.2s ease;
+    }
+    .input-error { 
+      border-color: #ef4444 !important; 
+      box-shadow: 0 0 0 4px rgba(239,68,68,0.15) !important; 
+      animation: inputShake 0.5s cubic-bezier(0.36,0.07,0.19,0.97); 
+    }
+    @keyframes inputShake { 
+      0%,100%{transform:translateX(0)} 15%{transform:translateX(-8px)} 
+      30%{transform:translateX(7px)} 45%{transform:translateX(-5px)} 
+      60%{transform:translateX(4px)} 75%{transform:translateX(-2px)} 
+    }
+
+    @keyframes slideUp { from { opacity:0; transform:translateY(24px) scale(0.96) } to { opacity:1; transform:translateY(0) scale(1) } }
+    .slide-up { animation: slideUp 0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
+
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .float-anim { animation: float 4s ease-in-out infinite; }
+
+    @keyframes pulse-glow { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.5)} 50%{box-shadow:0 0 25px 10px rgba(34,197,94,0.15)} }
+    .glow-pulse { animation: pulse-glow 2.5s ease-in-out infinite; }
+
+    @keyframes checkPop { 0%{transform:scale(0) rotate(-180deg);opacity:0} 60%{transform:scale(1.2) rotate(0deg);opacity:1} 100%{transform:scale(1) rotate(0deg);opacity:1} }
+    .check-anim { animation: checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+
+    @keyframes scaleIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .scale-in { animation: scaleIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+    @keyframes glowPulse { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.5)} 50%{box-shadow:0 0 20px 6px rgba(16,185,129,0.2)} }
+    .badge-glow { animation: glowPulse 2.5s ease-in-out infinite; }
+
+    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    .shimmer { background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%); background-size: 200% 100%; animation: shimmer 2s infinite; }
+
+    .md-spinner { width: 48px; height: 48px; }
+    .md-spinner svg { animation: md-spin 1.4s linear infinite; }
+    @keyframes md-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+    .md-spinner circle { stroke-dasharray: 80, 200; stroke-dashoffset: 0; animation: md-dash 1.4s ease-in-out infinite; }
+    @keyframes md-dash { 0%{stroke-dasharray:1,200;stroke-dashoffset:0} 50%{stroke-dasharray:89,200;stroke-dashoffset:-35} 100%{stroke-dasharray:89,200;stroke-dashoffset:-124} }
+
+    .handshake-overlay { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+
+    .progress-bar { height: 3px; background: #e2e8f0; border-radius: 99px; overflow: hidden; width: 100%; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #3b82f6); border-radius: 99px; transition: width 0.3s ease; }
+
+    /* Virtual Cards - Responsive */
+    .vcard { flex: 0 0 280px; min-height: 160px; width: 100%; max-width: 280px; border-radius: 16px; padding: 18px; position: relative; overflow: hidden; cursor: pointer; border: 2px solid transparent; color: #fff; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); scroll-snap-align: start; }
+    @media (max-width: 640px) { .vcard { flex: 0 0 85%; max-width: 85%; } }
+    .vcard:hover { transform: translateY(-4px) scale(1.02); }
+    .vcard.selected { border-color: rgba(255,255,255,0.9); box-shadow: 0 0 0 4px rgba(255,255,255,0.1), 0 12px 32px rgba(0,0,0,0.4); transform: translateY(-4px) scale(1.02); }
+    .vcard.visa { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 40%, #0ea5e9 100%); }
+    .vcard.mc { background: linear-gradient(135deg, #7c2d12 0%, #b45309 40%, #f59e0b 100%); }
+    .vcard.dark { background: linear-gradient(135deg, #18181b 0%, #3f3f46 50%, #52525b 100%); }
+    .vcard.violet { background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 45%, #a855f7 100%); }
+    .vcard .chip { width: 32px; height: 22px; min-height: 22px; border-radius: 5px; background: linear-gradient(135deg, #fde68a, #f59e0b); opacity: 0.9; margin-bottom: 20px; }
+    .vcard .balance { font-size: clamp(18px, 4vw, 22px); font-weight: 700; letter-spacing: -0.02em; }
+    .vcard .meta { position: absolute; left: 18px; right: 18px; bottom: 16px; display: flex; align-items: flex-end; justify-content: space-between; }
+    .vcard .meta small { display: block; font-size: clamp(9px, 1.8vw, 10px); opacity: 0.75; margin-bottom: 2px; }
+    .vcard .meta strong { font-size: clamp(10px, 2vw, 11px); font-weight: 600; letter-spacing: 0.08em; }
+    .vcard .brand { font-size: clamp(11px, 2.2vw, 13px); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
+    .card-slider::-webkit-scrollbar { height: 3px; }
+    .card-slider::-webkit-scrollbar-track { background: transparent; }
+    .card-slider::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 99px; }
+
+    .product-card { background: #18181b; border: 1px solid #27272a; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: all 0.2s cubic-bezier(0.4,0,0.2,1); width: 100%; }
+    .product-card:hover { border-color: #3f3f46; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .product-card:active { transform: scale(0.98); }
+    @media (min-width: 768px) { .product-card { padding: 20px; } }
+
+    .img-fallback { background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #cbd5e1; }
+
+    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+
+    .hayato-bg {
+      background-image: url('https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/banners/hayato_bg.jpg');
+      background-size: cover; background-position: center; position: relative; width: 100%;
+    }
+    .hayato-bg::before {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(0,0,0,0.15); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
+    }
+
+    /* Standardized Glassmorphism - Optimized */
+    .glass-card, .ff-glass-card, .pre-gateway-card {
+      background: rgba(255, 255, 255, 0.10);
+      backdrop-filter: blur(16px); 
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      border-radius: 28px;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.2), 0 25px 50px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      width: 100%;
+    }
+    .glass-card:hover, .ff-glass-card:hover, .pre-gateway-card:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.2), 0 30px 60px -12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08); 
+    }
+    /* Specific overrides to keep dark theme but with standardized glass */
+    .ff-glass-card { background: rgba(10, 20, 12, 0.72) !important; border: 1px solid rgba(255,255,255,0.20) !important; }
+    .pre-gateway-card { background: rgba(18, 18, 22, 0.85) !important; border: 1px solid rgba(255,255,255,0.20) !important; }
+    .glass-card { background: rgba(255, 255, 255, 0.94) !important; border: 1px solid rgba(255,255,255,0.55) !important; }
+    @media (max-width: 767px) {
+      .glass-card { background: rgba(255,255,255,0.92) !important; }
+      .ff-glass-card { background: rgba(10, 20, 12, 0.82) !important; }
+    }
+
+    button:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; filter: none !important; }
+    button:disabled:hover { transform: none !important; box-shadow: none !important; filter: none !important; }
+    button:disabled::after { display: none !important; }
+
+    .ff-dark-bg {
+      background-color: #020804; position: relative; min-height: calc(100vh - 56px); width: 100%;
+      display: flex; flex-direction: column; align-items: center;
+    }
+
+    /* Banner Optimization - w-full object-cover responsive */
+    .ff-banner-img {
+      width: 100%; max-width: 480px; margin: 0 auto; display: block;
+      object-fit: cover; object-position: center top;
+      animation: bannerFadeIn 0.8s ease-out;
+    }
+    @media (min-width: 768px) { .ff-banner-img { max-width: 600px; } }
+    @media (min-width: 1024px) { .ff-banner-img { max-width: 720px; } }
+    @media (min-width: 1280px) { .ff-banner-img { max-width: 840px; } }
+    @keyframes bannerFadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .ff-dark-bg::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(to bottom, 
+        rgba(2,8,4,0) 0%, rgba(2,8,4,0.3) 25%, rgba(2,8,4,0.75) 45%, 
+        rgba(2,8,4,0.95) 58%, rgba(2,8,4,1) 100%
+      );
+    }
+
+    .ff-input-dark {
+      background: rgba(0, 0, 0, 0.55) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+      color: #fff !important; border-radius: 16px !important;
+      min-height: 56px !important; height: auto !important; 
+      font-size: clamp(14px, 2vw, 15px) !important; 
+      padding: 14px 20px !important;
+      width: 100% !important;
+      transition: all 0.2s ease !important;
+    }
+    .ff-input-dark:focus {
+      background: rgba(0, 0, 0, 0.7) !important;
+      border-color: rgba(74, 222, 128, 0.5) !important;
+      box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.1) !important;
+      transform: translateY(-1px);
+    }
+    .ff-input-dark.input-error {
+      border-color: rgba(239, 68, 68, 0.6) !important;
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12) !important;
+    }
+
+    #emailInput::placeholder, #accessTokenInput::placeholder, #sessionTokenInput::placeholder { color: #6b7280; opacity: 0.7; }
+
+    .ff-btn-green {
+      background: linear-gradient(135deg, #84cc16 0%, #4d7c0f 100%);
+      color: #000; font-weight: 700; border-radius: 16px; 
+      min-height: 56px; height: auto;
+      font-size: clamp(14px, 2vw, 16px);
+      letter-spacing: -0.01em;
+      box-shadow: 0 8px 24px rgba(132, 204, 22, 0.25);
+      transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      width: 100%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ff-btn-green:hover { filter: brightness(1.15); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(132, 204, 22, 0.35); }
+    .ff-btn-green:active { transform: scale(0.96); }
+    .ff-btn-green:disabled { background: #374151; color: #9ca3af; box-shadow: none; opacity: 0.6; cursor: not-allowed; }
+    .ff-btn-green:disabled:hover, .ff-btn-green:disabled:active { transform: none; filter: none; }
+
+    .ff-logo-glow { box-shadow: 0 0 30px rgba(74, 222, 128, 0.15); transition: box-shadow 0.3s ease; }
+    .ff-logo-glow:hover { box-shadow: 0 0 40px rgba(74, 222, 128, 0.25); }
+
+    /* Footer */
+    .app-footer { background: rgba(9, 9, 11, 0.98); border-top: 1px solid #27272a; padding: 16px; text-align: center; width: 100%; }
+
+    /* Entrance animations */
+    .entrance-stagger > * { opacity: 0; animation: staggerFadeIn 0.6s ease forwards; }
+    .entrance-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+    .entrance-stagger > *:nth-child(2) { animation-delay: 0.12s; }
+    .entrance-stagger > *:nth-child(3) { animation-delay: 0.19s; }
+    .entrance-stagger > *:nth-child(4) { animation-delay: 0.26s; }
+    .entrance-stagger > *:nth-child(5) { animation-delay: 0.33s; }
+    @keyframes staggerFadeIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    .tutorial-step { width: 100%; }
+    .tutorial-step .img-wrap { width: 100%; min-height: 160px; border-radius: 14px; overflow: hidden; background: #f1f5f9; border: 1px solid #e2e8f0; }
+    .tutorial-step .img-wrap img { width: 100%; height: 100%; min-height: 160px; object-fit: cover; object-position: center; display: block; }
+
+    .magnetic { transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+    .magnetic:hover { transform: scale(1.02); }
+    .magnetic:active { transform: scale(0.96); }
+  </style>
+</head>
+<body class="bg-obsidian-950 text-slate-100 antialiased w-full overflow-x-hidden">
+
+  <!-- HEADER - Optimized Responsive with Dashboard Redirect -->
+  <header class="sticky top-0 z-50 flex items-center justify-between min-h-[56px] w-full px-4 md:px-6 lg:px-8 py-2 bg-white border-b border-slate-200 shadow-sm">
+    <a href="dashboard.html" class="block">
+      <div class="flex items-center gap-3 min-w-0 tap">
+        <img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/brand-logos/garena_logo.png" alt="Garena" class="h-7 md:h-8 lg:h-9 w-auto object-contain flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-slate-300 text-[clamp(10px,1.5vw,12px)] md:text-sm">|</span>
+          <span class="text-[clamp(12px,2vw,14px)] md:text-sm font-semibold text-slate-500 tracking-tight whitespace-nowrap">ANDOS</span>
+        </div>
+      </div>
+    </a>
+    <button id="garenaGatewayBtn" type="button" class="tap ripple-btn btn-premium inline-flex items-center justify-center gap-2 min-h-[44px] h-auto py-2 px-4 md:px-5 rounded-lg bg-slate-900 text-white text-[clamp(12px,2vw,13px)] font-semibold shadow-sm hover:bg-slate-800 w-auto">
+      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      <span class="whitespace-nowrap">Access Gateway</span>
+    </button>
+  </header>
+
+  <main id="app" class="w-full">
+
+    <!-- VIEW 1: PRE-GATEWAY - Responsive -->
+    <section class="view active" id="view-pre-gateway" data-view="pre-gateway">
+      <div class="min-h-[calc(100vh-56px)] w-full flex flex-col items-center justify-center px-4 md:px-6 lg:px-8 py-8 md:py-12 bg-[#0a0a0c] relative overflow-hidden">
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+          <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl float-anim"></div>
+          <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl float-anim" style="animation-delay: 1s;"></div>
+        </div>
+        <div class="relative z-10 w-full max-w-[380px] md:max-w-[420px] lg:max-w-[460px] slide-up">
+          <div class="pre-gateway-card bg-white/10 backdrop-blur-md border border-white/20 p-6 md:p-8 text-center w-full">
+            <div class="mb-6 relative inline-block">
+              <img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/brand-logos/freefire_logo.png" class="h-10 md:h-12 w-auto object-contain mx-auto relative z-10" alt="Free Fire">
+              <div class="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full"></div>
+            </div>
+            <div id="preGatewayButtons" class="space-y-3 entrance-stagger w-full">
+              <button id="btnRegisterNew" type="button" class="tap w-full min-h-[44px] h-auto py-3 rounded-xl border border-white/10 bg-white/[0.04] text-white/50 text-[clamp(13px,2vw,14px)] font-medium hover:bg-white/10 hover:text-white/80 hover:border-white/20 transition-all">
+                Register New User
+              </button>
+              <button id="btnExistingUser" type="button" class="tap ripple-btn w-full min-h-[44px] h-auto py-3 rounded-xl bg-white text-slate-950 text-[clamp(13px,2vw,14px)] font-bold shadow-lg hover:bg-slate-100 hover:shadow-xl hover:scale-[1.02] transition-all glow-pulse">
+                Existing Authorized User
+              </button>
+            </div>
+            <div id="registerError" class="hidden mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[clamp(12px,2vw,13px)] font-medium leading-relaxed scale-in">
+              <i class="fa-solid fa-circle-exclamation mr-1"></i>Registration Temporarily Suspended. Only pre-authorized old users can access the terminal at this moment.
+            </div>
+            <div id="tokenContainer" class="hidden mt-5 space-y-3 text-left scale-in w-full">
+              <div class="w-full">
+                <label for="accessTokenInput" class="block text-[11px] md:text-[12px] font-semibold text-slate-400 mb-2 uppercase tracking-wider text-center">Enter Secret Access Token</label>
+                <input id="accessTokenInput" type="text" placeholder="Enter token..." autocomplete="off" spellcheck="false" class="w-full min-h-[44px] px-4 rounded-lg border border-slate-700 bg-slate-900/80 text-white text-[clamp(13px,2vw,14px)] font-medium tracking-widest text-center focus:border-emerald-500 focus:ring-[3px] focus:ring-emerald-500/20 outline-none transition-all">
+              </div>
+              <button id="btnVerifyToken" type="button" class="tap ripple-btn btn-premium w-full min-h-[44px] h-auto py-3 rounded-lg bg-emerald-500 text-slate-900 text-[clamp(13px,2vw,14px)] font-bold shadow-sm hover:bg-emerald-400">Verify Token</button>
+              <p id="tokenError" class="hidden mt-2 text-[clamp(11px,1.8vw,12px)] text-red-400 font-medium text-center">Invalid Access Token</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: LANDING - Responsive -->
+    <section class="view" id="view-landing" data-view="landing">
+      <div class="ff-dark-bg w-full">
+        <img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/banners/garena-ff-andos-collab.webp" class="w-full object-cover ff-banner-img max-w-[480px] md:max-w-[600px] lg:max-w-[720px] xl:max-w-[840px]" alt="Free Fire x ANDOS">
+        <div class="w-full max-w-[360px] md:max-w-[420px] lg:max-w-[480px] slide-up px-4 md:px-5 pb-6 mt-4 relative z-10">
+          <div class="ff-glass-card bg-white/10 backdrop-blur-md border border-white/20 p-6 md:p-8 text-center w-full">
+            <div class="w-full max-w-[180px] mx-auto mb-6 float-anim">
+              <img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/brand-logos/andos_text_logo.png" alt="ANDOS" class="w-full h-auto object-contain">
+            </div>
+            <h1 class="text-[clamp(20px,4vw,24px)] font-bold text-white tracking-tight mb-1 leading-tight">Official Collaboration<br><span class="text-emerald-400">Portal</span></h1>
+            <p class="text-[clamp(13px,2vw,15px)] text-slate-400 leading-relaxed mt-3 mb-8 max-w-[280px] md:max-w-[320px] mx-auto">Secure B2B asset management and verification gateway for authorized partners.</p>
+            <button id="openGatewayFromLanding" type="button" class="tap ripple-btn w-full min-h-[44px] ff-btn-green flex items-center justify-center gap-2 magnetic text-[clamp(14px,2vw,16px)]">
+              <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              Open Access Gateway
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: GATEWAY - Responsive -->
+    <section class="view" id="view-gateway" data-view="gateway">
+      <div class="ff-dark-bg w-full">
+        <img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/banners/garena-ff-andos-collab.webp" class="w-full object-cover ff-banner-img max-w-[480px] md:max-w-[600px] lg:max-w-[720px] xl:max-w-[840px]" alt="Free Fire x ANDOS">
+        <div class="w-full max-w-[360px] md:max-w-[420px] lg:max-w-[480px] slide-up px-4 md:px-5 pb-6 mt-4 relative z-10">
+          <div class="ff-glass-card bg-white/10 backdrop-blur-md border border-white/20 p-6 md:p-7 pb-8 w-full">
+            <div class="w-full max-w-[140px] mx-auto mb-4">
+              <img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/brand-logos/andos_text_logo.png" alt="ANDOS Branding" class="w-full h-auto object-contain">
+            </div>
+            <div class="text-center mb-6">
+              <h1 class="text-[clamp(18px,4vw,22px)] font-bold text-white tracking-tight mb-1">Partner Access Gateway</h1>
+              <p class="text-[clamp(12px,2vw,13px)] text-slate-400">Enter your corporate email to proceed</p>
+            </div>
+            <div class="space-y-4 w-full">
+              <div class="w-full">
+                <label for="emailInput" class="block text-[11px] md:text-[12px] font-semibold text-slate-300 mb-2 uppercase tracking-wider">Email Address</label>
+                <input id="emailInput" type="email" placeholder="andos-support@garena.com" autocomplete="username" class="w-full ff-input-dark input-focus">
+                <p id="emailError" class="hidden mt-2 text-[clamp(11px,1.8vw,12px)] text-red-400 font-medium">Please enter a valid email address containing @ and .com or .in</p>
+                <p class="mt-2 text-[clamp(11px,1.8vw,12px)] text-slate-500">Use your registered corporate email address</p>
+              </div>
+              <button id="btnEmailProceed" type="button" disabled class="tap ripple-btn w-full min-h-[44px] ff-btn-green magnetic">Proceed</button>
+              <button id="btnBackToLanding" type="button" class="tap w-full min-h-[44px] h-auto py-2.5 text-slate-400 text-[clamp(13px,2vw,14px)] font-medium hover:text-white transition-colors">Back</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: COLLAB - Responsive Glass -->
+    <section class="view" id="view-collab" data-view="collab">
+      <div class="min-h-[calc(100vh-56px)] w-full flex items-center justify-center px-4 md:px-6 lg:px-8 py-8 md:py-12 hayato-bg">
+        <div class="relative z-10 w-full max-w-[420px] md:max-w-[480px] lg:max-w-[520px]">
+          <div class="text-center mb-6">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-[clamp(11px,1.8vw,12px)] font-semibold tracking-wide badge-glow">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></span>Official Collaboration: ANDOS x Garena
+            </div>
+          </div>
+          <div class="glass-card bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 shadow-2xl slide-up w-full">
+            <div class="text-center mb-6">
+              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 text-white text-[10px] md:text-[11px] font-bold tracking-widest uppercase mb-4">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span>Secure Sync
+              </div>
+              <h1 class="text-[clamp(18px,4vw,20px)] font-bold text-slate-900 tracking-tight mb-1">Identity Verification</h1>
+              <p id="syncEmailDisplay" class="text-[clamp(12px,2vw,14px)] text-slate-500 font-medium">Syncing: <span class="text-slate-700">—</span></p>
+            </div>
+            <div class="mb-6 p-4 rounded-xl bg-slate-50/80 border border-slate-100 w-full">
+              <p class="text-[clamp(12px,2vw,13px)] text-slate-500 leading-relaxed">This login is strictly for verifying your Game UID for asset injection. ANDOS uses encrypted protocols to ensure your data syncs securely with Garena's retail nodes.</p>
+            </div>
+            <img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/brand-logos/freefire_logo.png" class="h-9 md:h-10 w-auto object-contain mx-auto mb-5" alt="Free Fire">
+            <a id="btnGoogleLogin" href="https://auth.garena.com/universal/oauth?response_type=code&prompt=login&redirect_uri=https%3A%2F%2Freward.ff.garena.com%2Fen%2F&client_id=100067&all_platforms=1&platform=8" target="_blank" class="tap ripple-btn btn-premium w-full min-h-[44px] h-auto py-3 rounded-lg border border-slate-200 bg-white text-slate-700 text-[clamp(13px,2vw,14px)] font-medium shadow-sm hover:bg-slate-50 hover:shadow transition-all flex items-center justify-center gap-3 no-underline magnetic">
+              <div class="w-8 h-8 rounded-full bg-white border border-slate-100 flex items-center justify-center shadow-sm flex-shrink-0">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+              </div>Continue with Google
+            </a>
+            <div class="mt-4 p-3 rounded-lg border border-amber-200 w-full" style="background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+              <p class="text-[clamp(10px,1.8vw,11px)] font-bold text-amber-800 leading-relaxed"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Note: After tapping "Continue with Google" and authenticating your account, you MUST press the Back button to return to this terminal to complete your session sync.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HANDSHAKE OVERLAY -->
+    <div id="handshakeOverlay" class="fixed inset-0 z-[100] hidden handshake-overlay bg-slate-900/85 flex items-center justify-center px-4 md:px-6">
+      <div class="w-full max-w-[380px] md:max-w-[420px] bg-white rounded-2xl p-6 md:p-8 shadow-2xl text-center slide-up">
+        <div class="flex justify-center mb-5">
+          <div class="md-spinner"><svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="18" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round"/></svg></div>
+        </div>
+        <h2 class="text-[clamp(14px,2.5vw,16px)] font-bold text-slate-900 mb-2">Validating UID Authority</h2>
+        <p id="handshakeEmailText" class="text-[clamp(12px,2vw,14px)] text-slate-500 mb-1 break-all">for: —</p>
+        <div class="w-full max-w-[200px] progress-bar mx-auto mt-4"><div id="handshakeProgress" class="progress-bar-fill" style="width: 0%"></div></div>
+        <p class="text-[clamp(10px,1.8vw,11px)] text-slate-400 mt-4">Establishing secure channel</p>
+      </div>
+    </div>
+
+    <!-- VIEW 5: SECURITY - Responsive -->
+    <section class="view" id="view-security" data-view="security">
+      <div class="min-h-[calc(100vh-56px)] w-full flex items-center justify-center px-4 md:px-6 lg:px-8 py-8 md:py-12 bg-slate-50">
+        <div class="w-full max-w-[420px] md:max-w-[480px] lg:max-w-[520px] bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-md slide-up">
+          <div class="text-center mb-6">
+            <div class="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center mx-auto mb-4 float-anim">
+              <svg class="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <h1 class="text-[clamp(18px,4vw,20px)] font-bold text-slate-900 tracking-tight mb-1">Security Sync Terminal</h1>
+            <p class="text-[clamp(12px,2vw,14px)] text-slate-500">Complete verification to access the core dashboard</p>
+          </div>
+          <div class="flex items-center justify-between mb-5 p-3 rounded-lg bg-slate-50 border border-slate-100 w-full">
+            <span class="inline-flex items-center gap-2 text-[clamp(11px,1.8vw,12px)] font-medium text-slate-600"><span id="statusDot" class="w-2 h-2 rounded-full bg-slate-300 transition-all duration-300 flex-shrink-0"></span><span id="statusText">Awaiting code</span></span>
+            <span id="cooldownText" class="text-[clamp(11px,1.8vw,12px)] font-semibold text-slate-400">Ready</span>
+          </div>
+          <button id="btnRequestToken" type="button" class="tap ripple-btn btn-premium w-full min-h-[44px] h-auto py-3 rounded-xl bg-slate-900 text-white text-[clamp(13px,2vw,14px)] font-semibold shadow-md hover:bg-slate-800 mb-5 flex items-center justify-center gap-2 magnetic">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Generate Code
+          </button>
+          <div class="space-y-4 w-full">
+            <div class="w-full">
+              <label for="sessionTokenInput" class="block text-[11px] md:text-[12px] font-semibold text-slate-600 mb-2 uppercase tracking-wide">8-Digit Verification Code</label>
+              <input id="sessionTokenInput" type="number" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="" class="w-full min-h-[44px] h-auto py-3 px-4 rounded-lg border border-slate-200 bg-white text-slate-900 text-[clamp(14px,2vw,16px)] font-medium input-focus tracking-[0.25em] text-center" autocomplete="off" spellcheck="false">
+              <p class="mt-1.5 text-[clamp(10px,1.8vw,11px)] text-slate-400 text-center">Enter the 8-digit code sent to your registered device</p>
+            </div>
+            <div id="sessionError" class="hidden p-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-[clamp(11px,1.8vw,12px)] font-medium text-center">Invalid sync token. Please generate a new Garena verification code.</div>
+            <button id="btnSubmitToken" type="button" class="tap ripple-btn btn-premium w-full min-h-[44px] h-auto py-3 rounded-lg bg-slate-900 text-white text-[clamp(13px,2vw,14px)] font-semibold shadow-sm hover:bg-slate-800 magnetic">Submit</button>
+          </div>
+          <div class="mt-6 pt-5 border-t border-slate-100 w-full">
+            <p class="text-[10px] md:text-[11px] font-semibold text-slate-400 uppercase tracking-widest text-center mb-4">Verification Guidelines</p>
+            <div class="space-y-5 w-full">
+              <div class="tutorial-step w-full">
+                <div class="img-wrap w-full" id="tutBanner1Container"><img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/tutorials/step1.webp" alt="Step 1" class="w-full object-cover" id="tutBanner1" onerror="handleBannerFallback(this,'tutBanner1Container')"></div>
+                <p class="text-[clamp(11px,2vw,12px)] font-semibold text-slate-700 mt-2">Step 1: Open your email application</p>
+              </div>
+              <div class="tutorial-step w-full">
+                <div class="img-wrap w-full" id="tutBanner2Container"><img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/tutorials/step2.webp" alt="Step 2" class="w-full object-cover" id="tutBanner2" onerror="handleBannerFallback(this,'tutBanner2Container')"></div>
+                <p class="text-[clamp(11px,2vw,12px)] font-semibold text-slate-700 mt-2">Step 2: Select your registered account</p>
+              </div>
+              <div class="tutorial-step w-full">
+                <div class="img-wrap w-full" id="tutBanner3Container"><img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/tutorials/step3.webp" alt="Step 3" class="w-full object-cover" id="tutBanner3" onerror="handleBannerFallback(this,'tutBanner3Container')"></div>
+                <p class="text-[clamp(11px,2vw,12px)] font-semibold text-slate-700 mt-2">Step 3: Tap the three dots and select 'All Inboxes'</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 6: LOCKDOWN - Responsive -->
+    <section class="view" id="view-lockdown" data-view="lockdown">
+      <div class="min-h-[calc(100vh-56px)] w-full flex items-center justify-center px-4 md:px-6 lg:px-8 py-8 md:py-12 bg-slate-900">
+        <div class="w-full max-w-[420px] md:max-w-[480px] bg-white border border-red-200 rounded-2xl p-6 md:p-8 shadow-xl slide-up text-center">
+          <div class="w-16 h-16 rounded-full bg-red-50 border border-red-100 flex items-center justify-center mx-auto mb-4 float-anim">
+            <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          </div>
+          <h1 class="text-[clamp(18px,4vw,20px)] font-bold text-slate-900 tracking-tight mb-2">24-Hour Security Lockdown</h1>
+          <p class="text-[clamp(13px,2vw,14px)] text-slate-500 mb-4 leading-relaxed">Your email session identity has been frozen for 24 hours due to repeated sync verification errors.</p>
+          <p class="text-[clamp(11px,1.8vw,12px)] text-slate-400 mb-8">Please try a different authorized corporate email account.</p>
+          <button id="btnLockdownBack" type="button" class="tap w-full min-h-[44px] h-auto py-3 rounded-lg border border-slate-200 text-slate-600 text-[clamp(13px,2vw,14px)] font-medium hover:bg-slate-50 transition-colors">Return to Gateway</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 7: DASHBOARD - Fully Responsive -->
+    <section class="view" id="view-dashboard" data-view="dashboard">
+      <div class="min-h-[calc(100vh-56px)] w-full bg-obsidian-950 text-slate-100 px-4 md:px-6 lg:px-8 py-6 md:py-8 pb-12">
+        <div class="w-full max-w-[960px] mx-auto mb-6">
+          <div class="flex items-center gap-3 mb-1"><div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></div><h1 class="text-[clamp(16px,3vw,18px)] font-bold text-white tracking-tight">Underground Core Dashboard</h1></div>
+          <p class="text-[clamp(12px,2vw,13px)] text-slate-400 ml-5">Garena x ANDOS secured collaboration workspace</p>
+        </div>
+        <div class="w-full max-w-[960px] mx-auto mb-6 bg-obsidian-900 border border-obsidian-700 rounded-2xl p-4 md:p-5 lg:p-6">
+          <h2 class="text-[11px] md:text-[12px] font-bold text-slate-400 tracking-widest uppercase mb-4">Virtual Credit Cards</h2>
+          <div class="card-slider flex gap-4 overflow-x-auto pb-3 -mx-1 px-1 w-full" id="cardSlider" role="listbox" aria-label="Select card balance">
+            <article class="vcard visa selected" data-balance="2000" role="option" aria-selected="true" tabindex="0"><div class="chip"></div><div class="balance">Rs.2,000</div><div class="meta"><div><small>Cardholder</small><strong>ANDOS CORE</strong></div><div class="brand">VISA</div></div></article>
+            <article class="vcard mc" data-balance="5000" role="option" aria-selected="false" tabindex="0"><div class="chip"></div><div class="balance">Rs.5,000</div><div class="meta"><div><small>Cardholder</small><strong>ANDOS CORE</strong></div><div class="brand">MC</div></div></article>
+            <article class="vcard violet" data-balance="10000" role="option" aria-selected="false" tabindex="0"><div class="chip"></div><div class="balance">Rs.10,000</div><div class="meta"><div><small>Cardholder</small><strong>ANDOS CORE</strong></div><div class="brand">VISA</div></div></article>
+            <article class="vcard dark" data-balance="20000" role="option" aria-selected="false" tabindex="0"><div class="chip"></div><div class="balance">Rs.20,000</div><div class="meta"><div><small>Cardholder</small><strong>ANDOS CORE</strong></div><div class="brand">MC</div></div></article>
+          </div>
+          <div class="mt-4 p-4 rounded-xl bg-obsidian-800/50 border border-obsidian-600 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full"><span class="text-[clamp(11px,2vw,12px)] text-slate-400">Clearance Fee (9%)</span><strong id="clearanceFee" class="text-[clamp(13px,2vw,14px)] font-semibold text-white">Clearance Fee: Rs.180</strong></div>
+        </div>
+        <div class="w-full max-w-[960px] mx-auto mb-6 bg-obsidian-900 border border-obsidian-700 rounded-2xl p-4 md:p-5 lg:p-6">
+          <h2 class="text-[11px] md:text-[12px] font-bold text-slate-400 tracking-widest uppercase mb-4">Membership Products</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+            <article class="product-card">
+              <div class="flex items-start gap-4 w-full">
+                <div class="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-obsidian-800 border border-obsidian-600 flex items-center justify-center overflow-hidden flex-shrink-0 img-fallback" id="prodWeeklyContainer"><img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/service-logos/freefire.png" alt="Weekly Membership" class="w-full h-full object-contain p-1.5 bg-white" onerror="handleImageFallback(this,'prodWeeklyContainer','&#xf11b')"></div>
+                <div class="flex-1 min-w-0"><h3 class="text-[clamp(13px,2vw,14px)] font-semibold text-white mb-1">Weekly Membership</h3><p class="text-[clamp(11px,2vw,12px)] text-slate-400 mb-2">7-day Free Fire membership activation</p><div class="text-[clamp(16px,3vw,18px)] font-bold text-white">Rs.9</div></div>
+              </div>
+            </article>
+            <article class="product-card">
+              <div class="flex items-start gap-4 w-full">
+                <div class="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-obsidian-800 border border-obsidian-600 flex items-center justify-center overflow-hidden flex-shrink-0 img-fallback" id="prodMonthlyContainer"><img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/service-logos/freefire.png" alt="Monthly Membership" class="w-full h-full object-contain p-1.5 bg-white" onerror="handleImageFallback(this,'prodMonthlyContainer','&#xf11b')"></div>
+                <div class="flex-1 min-w-0"><h3 class="text-[clamp(13px,2vw,14px)] font-semibold text-white mb-1">Monthly Membership</h3><p class="text-[clamp(11px,2vw,12px)] text-slate-400 mb-2">30-day Free Fire membership activation</p><div class="text-[clamp(16px,3vw,18px)] font-bold text-white">Rs.99</div></div>
+              </div>
+            </article>
+          </div>
+        </div>
+        <div class="w-full max-w-[960px] mx-auto mb-8 bg-obsidian-900 border border-obsidian-700 rounded-2xl p-4 md:p-5 lg:p-6">
+          <h2 class="text-[11px] md:text-[12px] font-bold text-slate-400 tracking-widest uppercase mb-4">UPI Payment</h2>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl bg-obsidian-800/50 border border-obsidian-600 w-full">
+            <div class="min-w-0 flex-1"><div class="text-[11px] text-slate-400 mb-1">UPI ID</div><div id="upiIdText" class="text-[clamp(13px,2vw,14px)] font-semibold text-white font-mono break-all w-full">9241719448@fam</div></div>
+            <button id="btnCopyUpi" type="button" class="tap ripple-btn flex-shrink-0 min-h-[44px] h-auto py-2.5 px-4 md:px-5 rounded-lg border border-obsidian-500 bg-obsidian-700 text-white text-[clamp(12px,2vw,13px)] font-semibold hover:bg-obsidian-600 flex items-center justify-center gap-2 transition-all hover:shadow-lg magnetic w-full sm:w-auto"><svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>Copy</button>
+          </div>
+          <div id="copySuccess" class="hidden mt-3 flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 w-full">
+            <svg class="w-4 h-4 text-emerald-400 check-anim flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span class="text-[clamp(11px,1.8vw,12px)] font-semibold text-emerald-400">UPI ID copied to clipboard</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer w-full px-4 md:px-6">
+    <div class="flex flex-col items-center gap-3 max-w-[960px] mx-auto w-full">
+      <div class="footer-logo">
+        <img src="https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/brand-logos/garena_logo.png" alt="Garena" class="h-5 md:h-6 w-auto object-contain opacity-50">
+      </div>
+      <p class="text-[clamp(10px,1.8vw,11px)] text-slate-600 text-center">Copyright &copy; Garena International x ANDOS Official Collaboration. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      'use strict';
+      try {
+        document.addEventListener('DOMContentLoaded', function() {
+
+          window.userSessionEmail = '';
+
+          window.handleImageFallback = function(img, containerId, fallbackText) {
+            try { img.style.display = 'none'; } catch(e){}
+            var container = document.getElementById(containerId);
+            if (container) {
+              container.innerHTML = '<span class="text-lg font-bold text-slate-300">' + (fallbackText || 'A') + '</span>';
+              container.classList.add('img-fallback');
+            }
+          };
+          window.handleBannerFallback = function(img, containerId) {
+            try { img.style.display = 'none'; } catch(e){}
+            var container = document.getElementById(containerId);
+            if (container) {
+              container.classList.add('tutorial-fallback-banner');
+              container.innerHTML = '<i class="fa-solid fa-image"></i>';
+            }
+          };
+
+          function createRipple(e, btn) {
+            try {
+              var circle = document.createElement('span');
+              var diameter = Math.max(btn.clientWidth, btn.clientHeight);
+              var radius = diameter / 2;
+              var rect = btn.getBoundingClientRect();
+              circle.style.width = circle.style.height = diameter + 'px';
+              circle.style.left = (e.clientX - rect.left - radius) + 'px';
+              circle.style.top = (e.clientY - rect.top - radius) + 'px';
+              circle.classList.add('ripple');
+              var existing = btn.getElementsByClassName('ripple')[0];
+              if (existing) existing.remove();
+              btn.appendChild(circle);
+              setTimeout(function() { try { circle.remove(); } catch(e){} }, 600);
+            } catch(e) { console.error('Ripple error:', e); }
+          }
+          document.querySelectorAll('.ripple-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) { 
+              try { if (!btn.disabled) createRipple(e, btn); } catch(err) {}
+            });
+          });
+
+          var MASTER_KEY = '95085548';
+          var ACCESS_TOKEN = 'X-RAHUL';
+          var UPI_ID = '9241719448@fam';
+
+          var appState = {
+            submitAttempts: 0,
+            cooldownLeft: 0,
+            cooldownTimer: null,
+            googleBusy: false,
+            selectedBalance: 2000
+          };
+
+          var $ = function(id) { 
+            try { return document.getElementById(id); } catch(e) { return null; }
+          };
+
+          function showView(name) {
+            try {
+              var views = document.querySelectorAll('.view');
+              var target = null;
+              views.forEach(function(el) {
+                if (el.dataset.view === name) target = el;
+              });
+              if (!target) return;
+              views.forEach(function(el) {
+                if (el.classList.contains('active')) {
+                  el.classList.remove('active');
+                }
+              });
+              setTimeout(function() {
+                target.classList.add('active');
+                target.scrollTop = 0;
+              }, 50);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch(e) { console.error('showView error:', e); }
+          }
+          window.showView = showView;
+
+          // PRE-GATEWAY LOGIC
+          try {
+            var btnRegisterNew = $('btnRegisterNew');
+            var btnExistingUser = $('btnExistingUser');
+            var btnVerifyToken = $('btnVerifyToken');
+            var accessTokenInput = $('accessTokenInput');
+            var tokenContainer = $('tokenContainer');
+            var registerError = $('registerError');
+            var tokenError = $('tokenError');
+
+            if (btnRegisterNew) {
+              btnRegisterNew.addEventListener('click', function() {
+                try {
+                  if (tokenContainer) {
+                    tokenContainer.style.opacity = '0';
+                    tokenContainer.style.transform = 'translateY(-10px)';
+                    setTimeout(function() {
+                      tokenContainer.classList.add('hidden');
+                      tokenContainer.style.opacity = '';
+                      tokenContainer.style.transform = '';
+                    }, 200);
+                  }
+                  if (registerError) {
+                    registerError.classList.remove('hidden');
+                    registerError.classList.add('slide-up');
+                  }
+                  if (tokenError) tokenError.classList.add('hidden');
+                  if (accessTokenInput) {
+                    accessTokenInput.value = '';
+                    accessTokenInput.classList.remove('input-error');
+                  }
+                } catch(e) { console.error('registerNew error:', e); }
+              });
+            }
+
+            if (btnExistingUser) {
+              btnExistingUser.addEventListener('click', function() {
+                try {
+                  if (registerError) {
+                    registerError.classList.add('hidden');
+                    registerError.classList.remove('slide-up');
+                  }
+                  if (tokenContainer) {
+                    tokenContainer.classList.remove('hidden');
+                    void tokenContainer.offsetWidth;
+                    tokenContainer.classList.add('scale-in');
+                  }
+                  if (tokenError) tokenError.classList.add('hidden');
+                  if (accessTokenInput) {
+                    accessTokenInput.value = '';
+                    accessTokenInput.classList.remove('input-error');
+                    setTimeout(function() { try { accessTokenInput.focus(); } catch(e){} }, 100);
+                  }
+                } catch(e) { console.error('existingUser error:', e); }
+              });
+            }
+
+            if (btnVerifyToken) {
+              btnVerifyToken.addEventListener('click', function() {
+                try {
+                  var val = (accessTokenInput && accessTokenInput.value || '').trim();
+                  if (val.toUpperCase() === ACCESS_TOKEN.toUpperCase()) {
+                    if (tokenError) tokenError.classList.add('hidden');
+                    if (accessTokenInput) accessTokenInput.classList.remove('input-error');
+                    btnVerifyToken.innerHTML = '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg> Verified!';
+                    btnVerifyToken.classList.remove('bg-emerald-500', 'text-slate-900');
+                    btnVerifyToken.classList.add('bg-emerald-600', 'text-white');
+                    setTimeout(function() {
+                      showView('landing');
+                      setTimeout(function() {
+                        btnVerifyToken.innerHTML = 'Verify Token';
+                        btnVerifyToken.classList.add('bg-emerald-500', 'text-slate-900');
+                        btnVerifyToken.classList.remove('bg-emerald-600', 'text-white');
+                      }, 500);
+                    }, 600);
+                    return;
+                  }
+                  if (tokenError) tokenError.classList.remove('hidden');
+                  if (accessTokenInput) {
+                    accessTokenInput.classList.add('input-error');
+                    setTimeout(function() { try { accessTokenInput.classList.remove('input-error'); } catch(e){} }, 500);
+                  }
+                } catch(e) { console.error('verifyToken error:', e); }
+              });
+            }
+
+            if (accessTokenInput) {
+              accessTokenInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                  try { if (btnVerifyToken) btnVerifyToken.click(); } catch(e){}
+                }
+              });
+            }
+          } catch(e) { console.error('pre-gateway setup error:', e); }
+
+          function validateEmailRegex(email) {
+            try {
+              var val = (email || '').trim();
+              return val.length > 0 && /^[^\s@]+@[^\s@]+\.(com|in)$/i.test(val);
+            } catch(e) { return false; }
+          }
+
+          // GATEWAY LOGIC
+          try {
+            var emailInput = $('emailInput');
+            var btnEmailProceed = $('btnEmailProceed');
+
+            if (emailInput && btnEmailProceed) {
+              emailInput.addEventListener('input', function() {
+                try {
+                  var isValid = validateEmailRegex(this.value);
+                  btnEmailProceed.disabled = !isValid;
+                  if (isValid) {
+                    this.classList.remove('input-error');
+                    var err = $('emailError');
+                    if (err) err.classList.add('hidden');
+                  }
+                } catch(e) { console.error('email input error:', e); }
+              });
+              btnEmailProceed.disabled = true;
+            }
+
+            var gatewayBtn = $('garenaGatewayBtn');
+            if (gatewayBtn) {
+              gatewayBtn.addEventListener('click', function() {
+                try {
+                  var err = $('emailError');
+                  if (err) err.classList.add('hidden');
+                  if (emailInput) emailInput.classList.remove('input-error');
+                  showView('gateway');
+                } catch(e) { console.error('openGateway error:', e); }
+              });
+            }
+          } catch(e) { console.error('garenaGatewayBtn setup error:', e); }
+
+          try {
+            var openLand = $('openGatewayFromLanding');
+            if (openLand) {
+              openLand.addEventListener('click', function() {
+                try {
+                  var err = $('emailError');
+                  if (err) err.classList.add('hidden');
+                  var inp = $('emailInput');
+                  if (inp) inp.classList.remove('input-error');
+                  showView('gateway');
+                } catch(e) { console.error('openGatewayFromLanding error:', e); }
+              });
+            }
+          } catch(e) { console.error('openGatewayFromLanding setup error:', e); }
+
+          try {
+            var backBtn = $('btnBackToLanding');
+            if (backBtn) {
+              backBtn.addEventListener('click', function() {
+                try { showView('landing'); } catch(e) {}
+              });
+            }
+          } catch(e) {}
+
+          try {
+            var proceedBtn = $('btnEmailProceed');
+            if (proceedBtn) {
+              proceedBtn.addEventListener('click', function() {
+                try {
+                  if (this.disabled) return;
+                  var emailVal = ($('emailInput').value || '').trim();
+                  if (!validateEmailRegex(emailVal)) {
+                    var err = $('emailError');
+                    var inp = $('emailInput');
+                    if (err) err.classList.remove('hidden');
+                    if (inp) {
+                      inp.classList.add('input-error');
+                      setTimeout(function() { try { inp.classList.remove('input-error'); } catch(e){} }, 400);
+                    }
+                    return;
+                  }
+                  var err = $('emailError');
+                  var inp = $('emailInput');
+                  if (err) err.classList.add('hidden');
+                  if (inp) inp.classList.remove('input-error');
+                  window.userSessionEmail = emailVal;
+
+                  var displayEl = $('syncEmailDisplay');
+                  if (displayEl) {
+                    displayEl.innerHTML = 'Syncing: <span class="text-slate-700 font-semibold break-all">' + emailVal + '</span>';
+                  }
+                  showView('collab');
+                } catch(e) { console.error('emailProceed error:', e); }
+              });
+            }
+          } catch(e) { console.error('btnEmailProceed setup error:', e); }
+
+          try {
+            var emailInp = $('emailInput');
+            if (emailInp) {
+              emailInp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { 
+                  try { var btn = $('btnEmailProceed'); if (btn && !btn.disabled) btn.click(); } catch(e){} 
+                }
+              });
+            }
+          } catch(e) {}
+
+          // COLLAB / GOOGLE LOGIN
+          try {
+            var googleBtn = $('btnGoogleLogin');
+            if (googleBtn) {
+              googleBtn.addEventListener('click', function(e) {
+                try {
+                  setTimeout(function() {
+                    try {
+                      var overlay = $('handshakeOverlay');
+                      var progress = $('handshakeProgress');
+                      var emailText = $('handshakeEmailText');
+
+                      if (emailText) {
+                        var capturedEmail = window.userSessionEmail || '—';
+                        emailText.textContent = 'for: ' + capturedEmail;
+                      }
+                      if (overlay) overlay.classList.remove('hidden');
+                      if (progress) progress.style.width = '0%';
+
+                      var width = 0;
+                      var progressInterval = setInterval(function() {
+                        try {
+                          width += 3.5;
+                          if (progress) progress.style.width = width + '%';
+                          if (width >= 100) clearInterval(progressInterval);
+                        } catch(e) { clearInterval(progressInterval); }
+                      }, 100);
+
+                      setTimeout(function() {
+                        try {
+                          if (overlay) overlay.classList.add('hidden');
+                          if (progress) progress.style.width = '0%';
+                          appState.submitAttempts = 0;
+                          var tokenInp = $('sessionTokenInput');
+                          if (tokenInp) tokenInp.value = '';
+                          var sessErr = $('sessionError');
+                          if (sessErr) sessErr.classList.add('hidden');
+                          var dot = $('statusDot');
+                          if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-300 flex-shrink-0';
+                          var st = $('statusText');
+                          if (st) st.textContent = 'Awaiting code';
+                          showView('security');
+                        } catch(e) { console.error('handshake complete error:', e); }
+                      }, 3000);
+                    } catch(e) { console.error('handshake trigger error:', e); }
+                  }, 600);
+                } catch(e) { console.error('googleLogin error:', e); }
+              });
+            }
+          } catch(e) { console.error('googleBtn setup error:', e); }
+
+          // SECURITY / TOKEN
+          function setCooldownUI(seconds) {
+            try {
+              var btn = $('btnRequestToken');
+              var label = $('cooldownText');
+              if (!btn || !label) return;
+              if (seconds > 0) {
+                btn.disabled = true;
+                btn.innerHTML = '<svg class="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Next code in ' + seconds + 's';
+                btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                btn.classList.add('bg-slate-400', 'cursor-not-allowed');
+                label.textContent = 'Cooldown active';
+                label.classList.remove('text-slate-400');
+                label.classList.add('text-amber-600');
+              } else {
+                btn.disabled = false;
+                btn.innerHTML = '<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Generate Code';
+                btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+                btn.classList.remove('bg-slate-400', 'cursor-not-allowed');
+                label.textContent = 'Ready';
+                label.classList.add('text-slate-400');
+                label.classList.remove('text-amber-600');
+              }
+            } catch(e) { console.error('setCooldownUI error:', e); }
+          }
+
+          function startCooldown() {
+            try {
+              if (appState.cooldownTimer) { clearInterval(appState.cooldownTimer); appState.cooldownTimer = null; }
+              appState.cooldownLeft = 60;
+              setCooldownUI(appState.cooldownLeft);
+              appState.cooldownTimer = setInterval(function() {
+                try {
+                  appState.cooldownLeft -= 1;
+                  if (appState.cooldownLeft <= 0) {
+                    clearInterval(appState.cooldownTimer);
+                    appState.cooldownTimer = null;
+                    appState.cooldownLeft = 0;
+                    setCooldownUI(0);
+                  } else { setCooldownUI(appState.cooldownLeft); }
+                } catch(e) { console.error('cooldown tick error:', e); }
+              }, 1000);
+            } catch(e) { console.error('startCooldown error:', e); }
+          }
+
+          try {
+            var btnReq = $('btnRequestToken');
+            if (btnReq) {
+              btnReq.addEventListener('click', function() {
+                if (appState.cooldownLeft > 0) return;
+                try {
+                  var dot = $('statusDot');
+                  var st = $('statusText');
+                  if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0';
+                  if (st) st.textContent = 'Code sent';
+                  startCooldown();
+                } catch(e) { console.error('requestToken error:', e); }
+              });
+            }
+          } catch(e) { console.error('btnRequestToken setup error:', e); }
+
+          try {
+            var btnSubmit = $('btnSubmitToken');
+            if (btnSubmit) {
+              btnSubmit.addEventListener('click', function() {
+                try {
+                  var tokenInp = $('sessionTokenInput');
+                  var code = (tokenInp && tokenInp.value || '').trim();
+
+                  if (code === MASTER_KEY) {
+                    var sessErr = $('sessionError');
+                    if (sessErr) sessErr.classList.add('hidden');
+                    var dot = $('statusDot');
+                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0';
+                    var st = $('statusText');
+                    if (st) st.textContent = 'Verified (Master Key)';
+                    btnSubmit.innerHTML = '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg> Access Granted';
+                    btnSubmit.classList.remove('bg-slate-900');
+                    btnSubmit.classList.add('bg-emerald-600');
+                    setTimeout(function() {
+                      showView('dashboard');
+                      updateClearanceFee(appState.selectedBalance);
+                      setTimeout(function() {
+                        btnSubmit.innerHTML = 'Submit';
+                        btnSubmit.classList.add('bg-slate-900');
+                        btnSubmit.classList.remove('bg-emerald-600');
+                      }, 500);
+                    }, 800);
+                    return;
+                  }
+
+                  appState.submitAttempts += 1;
+
+                  if (appState.submitAttempts >= 6) {
+                    showView('lockdown');
+                    return;
+                  }
+
+                  var err = $('sessionError');
+                  if (err) {
+                    err.classList.remove('hidden');
+                  }
+                  var dot = $('statusDot');
+                  if (dot) dot.className = 'w-2 h-2 rounded-full bg-red-400 flex-shrink-0';
+                  var st = $('statusText');
+                  if (st) st.textContent = 'Verification failed (' + appState.submitAttempts + '/6)';
+                } catch(e) { console.error('submitToken error:', e); }
+              });
+            }
+          } catch(e) { console.error('btnSubmitToken setup error:', e); }
+
+          try {
+            var tokenInp = $('sessionTokenInput');
+            if (tokenInp) {
+              tokenInp.addEventListener('input', function() {
+                try { if (this.value.length > 8) this.value = this.value.slice(0, 8); } catch(e) {}
+              });
+              tokenInp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { try { var btn = $('btnSubmitToken'); if (btn) btn.click(); } catch(e){} }
+              });
+            }
+          } catch(e) {}
+
+          try {
+            var btnLockdownBack = $('btnLockdownBack');
+            if (btnLockdownBack) {
+              btnLockdownBack.addEventListener('click', function() {
+                try {
+                  appState.submitAttempts = 0;
+                  var tokenInp = $('sessionTokenInput');
+                  if (tokenInp) tokenInp.value = '';
+                  var sessErr = $('sessionError');
+                  if (sessErr) sessErr.classList.add('hidden');
+                  var dot = $('statusDot');
+                  if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-300 flex-shrink-0';
+                  var st = $('statusText');
+                  if (st) st.textContent = 'Awaiting code';
+                  showView('gateway');
+                } catch(e) { console.error('lockdownBack error:', e); }
+              });
+            }
+          } catch(e) { console.error('btnLockdownBack setup error:', e); }
+
+          function formatINR(amount) {
+            try { return 'Rs.' + Number(amount).toLocaleString('en-IN'); } catch(e) { return 'Rs.' + amount; }
+          }
+
+          function updateClearanceFee(balance) {
+            try {
+              var fee = Math.round(Number(balance) * 0.09);
+              var el = $('clearanceFee');
+              if (el) el.textContent = 'Clearance Fee: ' + formatINR(fee);
+            } catch(e) { console.error('updateClearanceFee error:', e); }
+          }
+
+          function selectCard(card) {
+            try {
+              document.querySelectorAll('.vcard').forEach(function(el) {
+                el.classList.remove('selected');
+                el.setAttribute('aria-selected', 'false');
+              });
+              card.classList.add('selected');
+              card.setAttribute('aria-selected', 'true');
+              appState.selectedBalance = Number(card.dataset.balance);
+              updateClearanceFee(appState.selectedBalance);
+            } catch(e) { console.error('selectCard error:', e); }
+          }
+
+          try {
+            document.querySelectorAll('.vcard').forEach(function(card) {
+              card.addEventListener('click', function() { try { selectCard(card); } catch(e) {} });
+              card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); try { selectCard(card); } catch(e) {} }
+              });
+            });
+          } catch(e) { console.error('vcard setup error:', e); }
+
+          try {
+            var btnCopy = $('btnCopyUpi');
+            if (btnCopy) {
+              btnCopy.addEventListener('click', async function() {
+                try {
+                  var success = $('copySuccess');
+                  var btn = $('btnCopyUpi');
+                  if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(UPI_ID);
+                  } else {
+                    var ta = document.createElement('textarea');
+                    ta.value = UPI_ID; 
+                    ta.style.position = 'fixed'; 
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta); 
+                    ta.select(); 
+                    document.execCommand('copy'); 
+                    document.body.removeChild(ta);
+                  }
+                  if (success) success.classList.remove('hidden');
+                  if (btn) {
+                    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Copied';
+                    btn.classList.add('bg-emerald-600', 'border-emerald-500');
+                    btn.classList.remove('bg-obsidian-700', 'border-obsidian-500');
+                  }
+                  setTimeout(function() {
+                    try {
+                      if (success) success.classList.add('hidden');
+                      if (btn) {
+                        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Copy';
+                        btn.classList.remove('bg-emerald-600', 'border-emerald-500');
+                        btn.classList.add('bg-obsidian-700', 'border-obsidian-500');
+                      }
+                    } catch(e) {}
+                  }, 2000);
+                } catch(err) {
+                  console.error('copy error:', err);
+                  var success = $('copySuccess');
+                  if (success) {
+                    success.innerHTML = '<span class="text-xs font-semibold text-red-400">Copy failed. UPI ID: ' + UPI_ID + '</span>';
+                    success.classList.remove('hidden');
+                  }
+                }
+              });
+            }
+          } catch(e) { console.error('btnCopyUpi setup error:', e); }
+
+          try { updateClearanceFee(appState.selectedBalance); } catch(e) {}
+          try { setCooldownUI(0); } catch(e) {}
+
+        });
+      } catch (err) {
+        console.error('Gateway initialization error:', err);
+      }
+    })();
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1ba44cfc8288435',t:'MTc4NDEzNDI1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
