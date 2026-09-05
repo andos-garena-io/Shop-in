@@ -1,0 +1,27 @@
+{
+  "id": "/?source=pwa",
+  "name": "ANDOS - Your Digital Space",
+  "short_name": "ANDOS",
+  "description": "Instant Free Fire Diamonds, BGMI UC, Live Deals & 24/7 Automated Delivery.",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "categories": ["shopping", "games", "utilities"],
+  "icons": [
+    { "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png", "sizes": "1254x1254", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Free Fire Diamonds", "short_name": "Free Fire", "url": "./?source=pwa#plans=freefire", "icons": [{ "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png", "sizes": "192x192" }] },
+    { "name": "My Orders", "short_name": "Orders", "url": "./?source=pwa#orders", "icons": [{ "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png", "sizes": "192x192" }] },
+    { "name": "Wallet", "short_name": "Wallet", "url": "./?source=pwa#wallet", "icons": [{ "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png", "sizes": "192x192" }] }
+  ],
+  "prefer_related_applications": false
+}
