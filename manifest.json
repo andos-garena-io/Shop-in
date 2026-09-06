@@ -1,0 +1,107 @@
+{
+  "id": "andos-digital-space-pwa",
+  "name": "ANDOS - Your Digital Space",
+  "short_name": "ANDOS",
+  "description": "India's fastest gaming top-up & digital services panel — instant recharges, live deals, secure wallet, and 24/7 support, all in one high-performance app.",
+  "start_url": "./index.html?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "portrait-primary",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "categories": [
+    "games",
+    "entertainment",
+    "shopping",
+    "utilities",
+    "finance"
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "launch_handler": {
+    "client_mode": [
+      "focus-existing",
+      "auto"
+    ]
+  },
+  "handle_links": "preferred",
+  "edge_side_panel": {
+    "preferred_width": 420
+  },
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Events & Deals",
+      "short_name": "Deals",
+      "description": "Flash deals aur live events kholein",
+      "url": "./index.html#categories",
+      "icons": [
+        {
+          "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png",
+          "sizes": "192x192",
+          "purpose": "any"
+        }
+      ]
+    },
+    {
+      "name": "My Wallet",
+      "short_name": "Wallet",
+      "description": "Wallet balance aur deposit balance dekhein",
+      "url": "./index.html#wallet",
+      "icons": [
+        {
+          "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png",
+          "sizes": "192x192",
+          "purpose": "any"
+        }
+      ]
+    },
+    {
+      "name": "Order History",
+      "short_name": "Orders",
+      "description": "Apne past aur pending orders check karein",
+      "url": "./index.html#orders",
+      "icons": [
+        {
+          "src": "https://raw.githubusercontent.com/CIDHARIOM/ANDOS-VS-0.172.1919/main/assets/logo/logo.png",
+          "sizes": "192x192",
+          "purpose": "any"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://raw.githubusercontent.com/CIDHARIOM/TEST-FILE/main/assets/images/ff-deals-banner.jpg",
+      "sizes": "1080x720",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "ANDOS Gaming Panel — Home & Live Events"
+    }
+  ]
+}
