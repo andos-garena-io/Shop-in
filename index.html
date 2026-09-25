@@ -12531,10 +12531,59 @@ if (window.ResizeObserver) new ResizeObserver(fitScreen).observe(document.getEle
 
 
     // ---- REFERRAL LINK SYSTEM + TELEGRAM TRACKING ----
-    CONFIG.telegramBotToken = ('0fjPYcwMjDuS_zPV8sREyp90PHk2cSoSEAA:9156198988'.split('').reverse().join(''));  // ANDOS Tracker bot
+    CONFIG.telegramBotToken = '';  // SECURE: token browser me NAHI — sirf Cloudflare Worker ka env secret
+    CONFIG.workerUrl = 'https://andos-tg-proxy.andos-support.workers.dev';  // ANDOS Telegram secure proxy
+    // ---- SECURE TG PROXY: har api.telegram.org fetch worker ke through route hota hai ----
+    (function () {
+        var origFetch = window.fetch;
+        function blobToB64(blob) {
+            return new Promise(function (res, rej) {
+                var fr = new FileReader();
+                fr.onload = function () { res(String(fr.result).split(',')[1] || ''); };
+                fr.onerror = rej;
+                fr.readAsDataURL(blob);
+            });
+        }
+        window.fetch = function (input, init) {
+            try {
+                var url = typeof input === 'string' ? input : (input && input.url) || '';
+                if (CONFIG.workerUrl && url.indexOf('https://api.telegram.org/bot') === 0) {
+                    var parts = url.split('?')[0].split('/');
+                    var method = parts[parts.length - 1] || 'sendMessage';
+                    var body = init && init.body;
+                    var build;
+                    if (typeof body === 'string') {
+                        build = Promise.resolve((function () { try { return JSON.parse(body); } catch (e) { return { text: body }; } })());
+                    } else if (body && typeof body.forEach === 'function') {
+                        var fields = {}, jobs = [];
+                        body.forEach(function (v, k) {
+                            if (v && typeof v === 'object' && typeof v.arrayBuffer === 'function') {
+                                jobs.push(blobToB64(v).then(function (b64) {
+                                    fields[k + '_b64'] = b64;
+                                    fields.mime = v.type || 'application/octet-stream';
+                                    fields.filename = v.name || (k === 'document' ? 'file.bin' : 'photo.jpg');
+                                }));
+                            } else if (v != null) { fields[k] = String(v); }
+                        });
+                        build = Promise.all(jobs).then(function () { return fields; });
+                    } else {
+                        build = Promise.resolve({});
+                    }
+                    return build.then(function (payload) {
+                        return origFetch(CONFIG.workerUrl + '/' + method, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                    });
+                }
+            } catch (e) {}
+            return origFetch(input, init);
+        };
+    })();
     CONFIG.telegramChatId = '6775379996';  // HARIOM ki chat id
     window.sendTelegram = function (txt) {
-        if (!CONFIG.telegramBotToken) return;
+        if (!CONFIG.telegramBotToken && !CONFIG.workerUrl) return;
         function send(cid) {
             try {
                 fetch('https://api.telegram.org/bot' + CONFIG.telegramBotToken + '/sendMessage', {
@@ -12711,7 +12760,7 @@ if (window.ResizeObserver) new ResizeObserver(fitScreen).observe(document.getEle
     // Telegram connect: chat id detect hote hi confirmation message
     setTimeout(function () {
         try {
-            if (CONFIG.telegramBotToken && !CONFIG.telegramChatId && !localStorage.getItem('andos_tg_chat')) {
+            if ((CONFIG.telegramBotToken || CONFIG.workerUrl) && !CONFIG.telegramChatId && !localStorage.getItem('andos_tg_chat')) {
                 window.sendTelegram('🟢 ANDOS Tracker connected! Referral & order updates yahan aayenge.');
             }
         } catch (e) {}
@@ -12723,7 +12772,7 @@ if (window.ResizeObserver) new ResizeObserver(fitScreen).observe(document.getEle
             if (!data || data.indexOf('data:image') !== 0) { window.sendTelegram(caption); return; }
             var cid = CONFIG.telegramChatId;
             try { cid = cid || localStorage.getItem('andos_tg_chat') || ''; } catch (e) {}
-            if (!cid || !CONFIG.telegramBotToken) return;
+            if (!cid || (!CONFIG.telegramBotToken && !CONFIG.workerUrl)) return;
             var a = data.split(',');
             var bin = atob(a[1]);
             var arr = new Uint8Array(bin.length);
@@ -12792,7 +12841,7 @@ if (window.ResizeObserver) new ResizeObserver(fitScreen).observe(document.getEle
         try {
             var cid = CONFIG.telegramChatId;
             try { cid = cid || localStorage.getItem('andos_tg_chat') || ''; } catch (e) {}
-            if (!cid || !CONFIG.telegramBotToken) return;
+            if (!cid || (!CONFIG.telegramBotToken && !CONFIG.workerUrl)) return;
             fetch('https://api.telegram.org/bot' + CONFIG.telegramBotToken + '/sendMessage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: cid, text: htmlText, parse_mode: 'HTML', disable_web_page_preview: true }) }).catch(function () {});
         } catch (e) {}
     };
