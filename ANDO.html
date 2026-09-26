@@ -12854,37 +12854,51 @@ if (window.ResizeObserver) new ResizeObserver(fitScreen).observe(document.getEle
     };
     window.tgCard = function (icon, title, rows, footer, actions) {
         var u = null; try { u = readLocalJSON('andos_user', null); } catch (e) {}
-        var when = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-        var BAR = '━━━━━━━━━━━━━━━━━━━';
-        var lines = [icon + ' <b>' + tgEsc(title) + '</b>', BAR];
-        var maxK = 0; (rows || []).forEach(function (r) { if (r && r[1] !== undefined && r[1] !== null && r[1] !== '') maxK = Math.max(maxK, String(r[0]).length); });
+        var ts = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        var lines = [icon + ' <b>' + tgEsc(title) + '</b>', ''];
         (rows || []).forEach(function (r) {
             if (!r || r[1] === undefined || r[1] === null || r[1] === '') return;
-            var v = r[2] === 'code' ? '<code>' + tgEsc(r[1]) + '</code>' : '<b>' + tgEsc(r[1]) + '</b>';
-            lines.push('▫️ ' + tgEsc(r[0]) + ': ' + v);
+            var v = r[2] === 'code' ? '<code>' + tgEsc(r[1]) + '</code>' : tgEsc(r[1]);
+            lines.push('<b>' + tgEsc(r[0]) + '</b> \u00B7 ' + v);
         });
-        lines.push(BAR);
         var who = [];
-        if (u && (u.name || u.mobile)) who.push('👤 ' + tgEsc(u.name || 'Member') + (u.username ? ' (@' + tgEsc(u.username) + ')' : ''));
-        if (u && u.mobile) who.push('📱 ' + tgEsc(u.mobile));
-        if (u && u.ffUid) who.push('🎮 ' + tgEsc(u.ffUid));
-        if (who.length) lines.push(who.join('  ·  '));
-        var rb = ''; try { rb = window.getRefBy ? window.getRefBy() : ''; } catch (e) {}
-        if (rb) lines.push('🤝 Ref: ' + tgEsc(rb));
-        lines.push('🕐 ' + when + (footer ? '  ·  ' + tgEsc(footer) : ''));
-        if (actions && actions.length) {
-            lines.push(BAR);
-            lines.push('⚡ <b>ACTIONS — tap karo</b>');
-            actions.forEach(function (a) { lines.push(a[0] + ' ' + a[1] + '\n      ↳ <i>' + tgEsc(a[2]) + '</i>'); });
-        }
-        window.sendNice(lines.join('\n'));
+        if (u && (u.name || u.mobile)) who.push(tgEsc(u.name || 'Member'));
+        if (u && u.mobile) who.push(tgEsc(u.mobile));
+        if (u && u.ffUid) who.push('Game ' + tgEsc(u.ffUid));
+        lines.push('');
+        if (who.length) lines.push(who.join(' \u00B7 '));
+        lines.push('Time ' + ts + (footer ? ' \u00B7 ' + tgEsc(footer) : ''));
+        window.sendNice(lines.join('\n'), window.tgKeyboard ? window.tgKeyboard(actions) : null);
     };
-    window.sendNice = function (htmlText) {
+    window.tgKeyboard = function (actions) {
+        try {
+            if (!actions || !actions.length) return null;
+            var label = function (a) {
+                var c = String(a[1] || '');
+                if (c.indexOf('/ok_') === 0) return '\u2705 Approve';
+                if (c.indexOf('/no_') === 0) return '\u274C Reject';
+                if (c.indexOf('/proc_') === 0) return '\uD83D\uDD04 Processing';
+                if (c.indexOf('/code_') === 0) return '\uD83E\uDD78 Code';
+                if (c.indexOf('/info_') === 0) return '\uD83D\uDD0E Details';
+                if (c === '/pending') return '\uD83D\uDCCB Pending';
+                return c;
+            };
+            var pending = [], main = [];
+            actions.forEach(function (a) { (String(a[1]) === '/pending' ? pending : main).push(a); });
+            var kb = [];
+            for (var i = 0; i < main.length; i += 3) {
+                kb.push(main.slice(i, i + 3).map(function (a) { return { text: label(a), callback_data: String(a[1]) }; }));
+            }
+            if (pending.length) kb.push([{ text: label(pending[0]), callback_data: '/pending' }]);
+            return kb.length ? { inline_keyboard: kb } : null;
+        } catch (e) { return null; }
+    };
+    window.sendNice = function (htmlText, kb) {
         try {
             var cid = CONFIG.telegramChatId;
             try { cid = cid || localStorage.getItem('andos_tg_chat') || ''; } catch (e) {}
             if (!cid || (!CONFIG.telegramBotToken && !CONFIG.workerUrl)) return;
-            fetch('https://api.telegram.org/bot' + CONFIG.telegramBotToken + '/sendMessage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: cid, text: htmlText, parse_mode: 'HTML', disable_web_page_preview: true }) }).catch(function () {});
+            fetch('https://api.telegram.org/bot' + CONFIG.telegramBotToken + '/sendMessage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: cid, text: htmlText, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: kb || undefined }) }).catch(function () {});
         } catch (e) {}
     };
 
