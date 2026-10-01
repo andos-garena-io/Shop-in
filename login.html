@@ -2003,7 +2003,10 @@ function handleError(e) {
    OAuth client IDs and the worker URL.
    ------------------------------------------------------------------------- */
 const AUTH = "https://io.andos-support.workers.dev";
-const REDIR = location.origin + location.pathname;
+const VERCEL_REDIRECT = "https://andos-com.vercel.app/login.html";
+const REDIR = location.origin === "https://andos-com.vercel.app"
+  ? VERCEL_REDIRECT
+  : location.origin + location.pathname;
 const GH_CLIENT_ID = "Ov23liwKhGRpAAp4Rhjo";
 const DC_CLIENT_ID = "1554250993674223686";
 
@@ -2179,7 +2182,7 @@ function loadTelegramWidget() {
   script.setAttribute("data-size", "large");
   script.setAttribute("data-userpic", "false");
   script.setAttribute("data-request-access", "write");
-  script.setAttribute("data-onauth", "window.__tgAuth(user)");
+  script.setAttribute("data-auth-url", REDIR);
   tgMount.appendChild(script);
 }
 window.__tgAuth = async function(user) {
@@ -2250,6 +2253,15 @@ function steamReturnState(url) {
   if (qs.get("error")) {
     cleanAuthQuery(); forgetState(); busy(false);
     toast("Sign-in was cancelled.", "err");
+    return;
+  }
+  if (qs.has("id") && qs.has("auth_date") && qs.has("hash")) {
+    const telegramUser = Object.fromEntries(qs.entries());
+    cleanAuthQuery(); busy(true);
+    try {
+      const result = await postJson(AUTH + "/telegram", telegramUser);
+      await finishSocial(result);
+    } catch (err) { busy(false); authMessage(err); }
     return;
   }
   if (qs.has("code") && (state.indexOf("gh.") === 0 || state.indexOf("dc.") === 0)) {
