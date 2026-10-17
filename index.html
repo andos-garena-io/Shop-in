@@ -14247,7 +14247,29 @@ const PLANS = {
         /* Cloud notifications -> app Notification Center (login pe + har 60s) */
         syncNotifications: function () {
             var url = (CONFIG && CONFIG.fsWorkerUrl) || '';
-            if (!url || !(auth && auth.currentUser && !auth.currentUser.isAnonymous)) return Promise.resolve();
+            if (!(auth && auth.currentUser && !auth.currentUser.isAnonymous)) return Promise.resolve();
+            /* v5: worker nahi hai to seedha Firestore se apni notifications padho
+               (rules v3: member apni hi notifications list kar sakta hai) */
+            if (!url) {
+                if (!db) return Promise.resolve();
+                return db.collection('notifications').where('uid', '==', auth.currentUser.uid).limit(30).get()
+                    .then(function (snap) {
+                        var items = [];
+                        snap.forEach(function (d) { var v = d.data() || {}; v.id = d.id; items.push(v); });
+                        items.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+                        if (!items.length) return;
+                        var local = readLocalJSON('andos_notifications', []) || [];
+                        var seen = {}; local.forEach(function (n) { seen[n.id] = 1; });
+                        var added = 0;
+                        items.forEach(function (n) {
+                            var id = 'CLD-' + (n.id || n.ref || n.at || Math.random().toString(36).slice(2));
+                            if (seen[id]) return;
+                            local.unshift({ id: id, message: (n.title ? n.title + '\n' : '') + (n.body || ''), type: n.type || 'info', at: n.at || Date.now(), read: !!n.read });
+                            added++;
+                        });
+                        if (added) { saveNotifications(local); try { render(); } catch (e) {} }
+                    }).catch(function (e) { console.warn('notif direct', e); });
+            }
             return auth.currentUser.getIdToken().then(function (tok) {
                 return fetch(url.replace(/\/$/, '') + '/notifications', { headers: { 'Authorization': 'Bearer ' + tok } })
                     .then(function (r) { return r.ok ? r.json() : null; })
@@ -14409,7 +14431,22 @@ const PLANS = {
     // ---- User profile cloud sync (users/{uid}) ----
     ANDOS_FB.loadUser = function (fbUser) {
         if (!this.ready()) return Promise.resolve(null);
-        return db.collection('users').doc(fbUser.uid).get().then(function (d) { return d.exists ? d.data() : null; }).catch(function (e) { console.warn('FB loadUser', e); return null; });
+        // v5: wallets/{uid}.balance = money ka SOURCE OF TRUTH (Admin SDK writes).
+        // users.wallet sirf mirror hai; agar wallet doc hai to wahi dikhao.
+        return db.collection('users').doc(fbUser.uid).get().then(function (d) {
+            var data = d.exists ? d.data() : null;
+            return db.collection('wallets').doc(fbUser.uid).get().then(function (w) {
+                try {
+                    var wd = w.exists ? w.data() : null;
+                    if (wd && typeof wd.balance === 'number' && isFinite(wd.balance)) {
+                        data = data || {};
+                        data.wallet = wd.balance;
+                        data.walletAt = wd.updatedAt || Date.now();
+                    }
+                } catch (e2) {}
+                return data;
+            }).catch(function () { return data; });
+        }).catch(function (e) { console.warn('FB loadUser', e); return null; });
     };
     ANDOS_FB.saveUser = function (extra) {
         if (!this.ready() || !auth.currentUser || auth.currentUser.isAnonymous) return Promise.resolve();
