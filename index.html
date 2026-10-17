@@ -14455,13 +14455,15 @@ const PLANS = {
         // wallet/loyalty/walletPin/favorites/transactions/ordersCount = server (Admin SDK) only —
         // client se likhne par pura document write permission-denied ho jata tha.
         var data = Object.assign({
-            uid: u.uid, email: u.email || '', googleName: u.displayName || '', googlePhoto: u.photoURL || '', username: user.username || '', photoURL: user.photoURL || '',
+            uid: u.uid, email: u.email || '', googleName: u.displayName || '', googlePhoto: u.photoURL || '', photoURL: user.photoURL || '',
             name: user.name || '', mobile: user.mobile || '', dob: user.dob || '', ffUid: user.ffUid || '', ffName: user.ffName || '',
             bio: user.bio || '', location: user.location || '', website: user.website || '',
             refBy: (window.getRefBy ? window.getRefBy() : ''), referralCode: (window.getMyRefCode ? window.getMyRefCode() : (CONFIG.referralCode || '')),
             avatar: (function () { try { var a = localStorage.getItem('andos_profile_avatar') || ''; return a.length < 900000 ? a : ''; } catch (e) { return ''; } })(),
             device: this.deviceId(), lastSeen: Date.now(), updatedAt: Date.now()
         }, extra || {});
+        // v6: username sirf tab likho jab user ne khud badla ho (placeholder kabhi na bhejo)
+        if (user.username && user.username !== 'andos_member') data.username = user.username;
         return db.collection('users').doc(u.uid).set(data, { merge: true }).catch(function (e) { console.warn('FB saveUser', e); });
     };
     // ---- REFERRAL ATTRIBUTION (Firebase): har user ka ek immutable signup record ----
@@ -14494,6 +14496,9 @@ const PLANS = {
             // Profile: cloud value pehle, warna local, warna Google
             var def = (user.mobile === '9999999999');
             user.name = (cloud && cloud.name) || (user.name && user.name !== 'ANDOS Member' ? user.name : '') || fbUser.displayName || user.name;
+            // v6: username + 7-digit ANDOS ID server se aate hain (unique, Admin SDK) — inhe kabhi overwrite mat karo
+            if (cloud && cloud.username && cloud.username !== 'andos_member') user.username = cloud.username;
+            if (cloud && cloud.publicId) user.publicId = cloud.publicId;
             user.email = fbUser.email || (cloud && cloud.email) || user.email;
             user.mobile = (cloud && cloud.mobile) || (!def ? user.mobile : '') || '';
             ['dob','ffUid','ffName','bio','location','website'].forEach(function (k) { user[k] = (cloud && cloud[k]) || user[k] || ''; });
